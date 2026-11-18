@@ -1,0 +1,42 @@
+# Blind-test template. Copy to company_c.yaml and change only field mappings/file names.
+company: C
+data_root: data/Cantill_DataML_Task_Kit
+reporting_currency: USD
+
+taxonomy:
+  file: company_C/taxonomy_C.csv
+  # May contain 1-4 levels. Set exact runtime column names here.
+  columns: [category_l1, category_l2, category_l3, category_l4]
+
+# No labels block: C is intentionally zero-label.
+
+sources:
+  - name: AP
+    file: company_C/invoice_lines.csv
+    id_column: line_id
+    record_prefix: ""
+    columns:
+      supplier_id: vendor_id
+      supplier_name: supplier_name
+      material_id: material_number
+      status: status
+      currency: currency
+      quantity: quantity
+      po_number: po_number
+      po_line: po_line
+      invoice_number: invoice_number
+    description_columns: [line_description, gl_account_description]
+    date_columns: [invoice_date, posting_date]
+    amount:
+      column: line_amount
+      type: net
+    retain_columns: [gl_account, gl_account_description, supplier_type, document_type, cost_centre]
+
+spend_rules:
+  status_column: status
+  approved_statuses: [Approved, Paid]
+  cancelled_statuses: [Cancelled, Canceled]
+  non_procurement_text_columns: [gl_account_description, line_description]
+
+classification:
+  feature_columns: [description, material_id, supplier_name, supplier_id, gl_account_description, document_type, cost_centre]

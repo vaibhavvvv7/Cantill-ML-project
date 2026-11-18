@@ -1,0 +1,20 @@
+# Confidential task data - never commit
+/data/
+**/company_A/*.csv
+**/company_B/*.csv
+**/company_C/*.csv
+**/Cantill_DataML_Task_Kit*/
+*.zip
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Generated caches/models
+.cache/
+artifacts/
+
+# Blind-test outputs are intentionally allowed under submission/

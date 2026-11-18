@@ -1,0 +1,17 @@
+{
+  "company": "B",
+  "input_rows": 41028,
+  "output_rows": 41028,
+  "included": 38542,
+  "excluded": 2486,
+  "exclusion_counts": {
+    "NON_PROCUREMENT": 2486
+  },
+  "total_spend": 328714435.3768486,
+  "date_parse_failures": 0,
+  "amount_parse_failures": 3,
+  "fx_missing": 5,
+  "supplier_keys": 3995,
+  "item_keys": 13227,
+  "mean_confidence": 0.7895586243966694
+}

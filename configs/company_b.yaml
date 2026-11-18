@@ -1,0 +1,51 @@
+company: B
+data_root: data/Cantill_DataML_Task_Kit
+reporting_currency: USD
+
+taxonomy:
+  file: company_B/taxonomy_B.csv
+  columns: [category_l1, category_l2, category_l3]
+
+labels:
+  file: company_B/seed_labels.csv
+  id_column: line_id
+  id_prefix: ""
+  category_columns: [category_l1, category_l2, category_l3]
+
+sources:
+  - name: AP
+    file: company_B/invoice_lines.csv
+    id_column: line_id
+    record_prefix: ""
+    columns:
+      supplier_id: vendor_id
+      material_id: material_number
+      currency: currency
+      quantity: quantity
+      po_number: po_number
+      po_line: po_line
+      invoice_number: invoice_number
+    description_columns: [line_description, gl_account_description]
+    date_columns: [invoice_date, posting_date]
+    amount:
+      column: line_amount
+      type: net
+    retain_columns: [source_system, region, currency_rate, cost_centre, gl_account, gl_account_description, supplier_type, document_type, po_type, plant, company_code, payment_terms, transport_flag]
+
+fx:
+  inline_rate_column: currency_rate
+  file: company_B/fx_rates_usd.csv
+  currency_column: currency
+  month_column: month
+  rate_column: units_per_usd
+
+spend_rules:
+  learn_exact_columns: [gl_account_description, supplier_type]
+  non_procurement_text_columns: [gl_account_description, line_description]
+  non_procurement_regex:
+    - "^IC[0-9]+$"
+    - "\\bI/C\\s*Payable\\b"
+    - "\\bIC\\s*Payables?\\b"
+
+classification:
+  feature_columns: [description, material_id, supplier_id, gl_account, gl_account_description, supplier_type, document_type, po_type, source_system, region, plant, cost_centre]

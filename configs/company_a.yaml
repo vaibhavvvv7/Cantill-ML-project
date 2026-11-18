@@ -1,0 +1,66 @@
+company: A
+data_root: data/Cantill_DataML_Task_Kit
+reporting_currency: ZAR
+
+taxonomy:
+  file: company_A/taxonomy_A.csv
+  columns: [category_l1, category_l2, category_l3]
+
+labels:
+  file: company_A/labels_A.csv
+  id_column: record_id
+  id_prefix: ""
+  category_columns: [category_l1, category_l2, category_l3]
+
+sources:
+  - name: ERP
+    file: company_A/erp_goods_receipts.csv
+    id_column: line_id
+    record_prefix: "ERP:"
+    columns:
+      supplier_id: vendor_id
+      supplier_name: supplier_name
+      material_id: material_number
+      currency: document_currency
+      quantity: quantity
+      po_number: po_number
+      po_line: po_item
+    description_columns: [material_short_text, service_short_text]
+    date_columns: [posting_date]
+    amount:
+      column: value_zar
+      type: net
+    retain_columns: [source_system, spend_type, material_type, uom, site_code, site_name, cost_centre, opex_capex, contract_status]
+
+  - name: TOOL
+    file: company_A/invoice_tool_export.csv
+    id_column: tool_record_id
+    record_prefix: "TOOL:"
+    columns:
+      supplier_name: supplier_name_as_captured
+      status: status
+      currency: currency
+      quantity: quantity
+      po_number: po_reference
+      invoice_number: invoice_number
+    description_columns: [line_text]
+    date_columns: [invoice_date]
+    amount:
+      column: gross_amount
+      type: gross
+      tax_column: vat_rate
+      default_tax: 0.15
+
+matching:
+  enabled: true
+  primary_source: ERP
+  secondary_source: TOOL
+
+spend_rules:
+  status_column: status
+  approved_statuses: [Paid, Approved, ""]
+  cancelled_statuses: [Cancelled]
+  non_procurement_text_columns: []
+
+classification:
+  feature_columns: [description, material_id, supplier_name, supplier_id, spend_type, material_type, cost_centre, site_code]

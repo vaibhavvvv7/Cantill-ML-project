@@ -31,6 +31,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.middleware("http")
+async def fix_vercel_path(request: Request, call_next):
+    """Normalize Vercel rewrite paths so FastAPI router correctly dispatches requests."""
+    scope = request.scope
+    path = scope.get("path", "")
+    for prefix in ("/api/index.py", "/api/index", "/index.py"):
+        if path.startswith(prefix):
+            remainder = path[len(prefix):]
+            scope["path"] = remainder if remainder else "/"
+            break
+    response = await call_next(request)
+    return response
+
+
 # In-memory store for generated downloads: {task_id: {"content": bytes, "filename": str, "created_at": float}}
 DOWNLOAD_CACHE: dict[str, dict] = {}
 
@@ -46,15 +61,38 @@ def _is_valid_upload(f) -> bool:
     return f is not None and hasattr(f, "read") and bool(getattr(f, "filename", ""))
 
 
+def _get_index_html() -> str:
+    # 1. Try static/index.html from project root
+    p1 = ROOT_DIR / "static" / "index.html"
+    if p1.exists():
+        try:
+            return p1.read_text(encoding="utf-8")
+        except Exception:
+            pass
+    # 2. Try relative to current api directory
+    p2 = Path(__file__).resolve().parent.parent / "static" / "index.html"
+    if p2.exists():
+        try:
+            return p2.read_text(encoding="utf-8")
+        except Exception:
+            pass
+    return "<h2>Cantill Spend Pipeline is Running</h2><p>Visit <a href='/api/health'>/api/health</a> or inspect GitHub repository.</p>"
+
+
 @app.get("/", response_class=HTMLResponse)
+@app.get("/api", response_class=HTMLResponse)
+@app.get("/api/", response_class=HTMLResponse)
+@app.get("/api/index", response_class=HTMLResponse)
+@app.get("/api/index.py", response_class=HTMLResponse)
+@app.get("/index.py", response_class=HTMLResponse)
 async def serve_home():
-    html_path = ROOT_DIR / "static" / "index.html"
-    if html_path.exists():
-        return HTMLResponse(content=html_path.read_text(encoding="utf-8"))
-    return HTMLResponse("<h2>Cantill Spend Pipeline is Running</h2><p>Visit <a href='/api/health'>/api/health</a> or inspect GitHub repository.</p>")
+    return HTMLResponse(content=_get_index_html())
 
 
 @app.get("/api/health")
+@app.get("/health")
+@app.get("/api/index.py/api/health")
+@app.get("/api/index/api/health")
 async def health_check():
     return {
         "status": "healthy",
@@ -65,6 +103,8 @@ async def health_check():
 
 
 @app.get("/api/demo/{company}")
+@app.get("/demo/{company}")
+@app.get("/api/index.py/api/demo/{company}")
 async def get_demo_diagnostics(company: str):
     comp = company.upper()
     diag_file = ROOT_DIR / "outputs" / f"{comp}_diagnostics.json"
@@ -74,6 +114,8 @@ async def get_demo_diagnostics(company: str):
 
 
 @app.get("/api/demo/{company}/download")
+@app.get("/demo/{company}/download")
+@app.get("/api/index.py/api/demo/{company}/download")
 async def download_demo_csv(company: str):
     comp = company.upper()
     csv_file = ROOT_DIR / "outputs" / f"vaibhav__{comp}.csv"
@@ -87,6 +129,9 @@ async def download_demo_csv(company: str):
 
 
 @app.post("/api/run")
+@app.post("/run")
+@app.post("/api/index.py/api/run")
+@app.post("/api/index/api/run")
 async def run_pipeline_endpoint(request: Request):
     try:
         from spend_pipeline.pipeline import run_pipeline
@@ -221,6 +266,8 @@ async def run_pipeline_endpoint(request: Request):
 
 
 @app.get("/api/download/{download_id}")
+@app.get("/download/{download_id}")
+@app.get("/api/index.py/api/download/{download_id}")
 async def download_result(download_id: str):
     item = DOWNLOAD_CACHE.get(download_id)
     if not item:
@@ -232,3 +279,12 @@ async def download_result(download_id: str):
             "Content-Disposition": f'attachment; filename="{item["filename"]}"'
         }
     )
+
+
+@app.exception_handler(404)
+async def custom_404_handler(request: Request, exc):
+    path = request.scope.get("path", "")
+    # If the user accessed the root or an edge path, serve the home interface
+    if not path.startswith("/api/") or "index.py" in path or path in ("/api", "/api/"):
+        return await serve_home()
+    return JSONResponse(status_code=404, content={"detail": f"Not Found: {path}"})

@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cantill Spend Pipeline - ML Normalization & Classification</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    .animate-pulse-subtle {
+      animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen antialiased flex flex-col font-sans">
+  <!-- Top Navigation -->
+  <header class="border-b border-slate-800 bg-slate-900/60 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/20">
+          C
+        </div>
+        <div>
+          <h1 class="text-base font-semibold leading-tight text-white flex items-center gap-2">
+            Cantill Spend Pipeline
+            <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-medium">FastAPI Engine</span>
+          </h1>
+          <p class="text-xs text-slate-400">Config-driven procurement spend ML & identity resolution</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-3 text-xs">
+        <span class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700">Author: <strong class="text-indigo-400 font-medium">Vaibhav</strong></span>
+        <a href="https://github.com/vaibhavvvv7/Cantill-ML-project" target="_blank" rel="noopener noreferrer" 
+           class="px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-white font-medium border border-slate-700 transition flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <main class="max-w-6xl mx-auto px-4 py-8 flex-1 w-full">
+    <div class="mb-8">
+      <h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-2">Procurement Spend Intelligence & Classification</h2>
+      <p class="text-sm sm:text-base text-slate-400 max-w-3xl leading-relaxed">
+        Ingests multi-source procurement data, performs automated VAT normalization, cross-system deduplication, entity clustering, and supervised or zero-label taxonomy classification — zero paid APIs required.
+      </p>
+    </div>
+
+    <!-- Mode Selector Tabs -->
+    <div class="flex items-center space-x-2 border-b border-slate-800 pb-3 mb-6">
+      <button id="tab-live" onclick="switchTab('live')" 
+              class="px-4 py-2 rounded-lg text-sm font-medium transition bg-indigo-600 text-white shadow-sm flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+        Live File Processing
+      </button>
+      <button id="tab-demo" onclick="switchTab('demo')" 
+              class="px-4 py-2 rounded-lg text-sm font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-900 flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        Pre-Computed Benchmark Results
+      </button>
+    </div>
+
+    <!-- TAB 1: LIVE EXECUTION -->
+    <section id="content-live" class="space-y-6">
+      <!-- Company Switcher -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <h3 class="text-base font-semibold text-white">Target Company Pipeline</h3>
+            <p class="text-xs text-slate-400">Select pipeline configuration rules and required data sources</p>
+          </div>
+          <div class="inline-flex rounded-lg bg-slate-950 p-1 border border-slate-800" role="group">
+            <button type="button" onclick="setCompany('A')" id="btn-comp-a" class="px-4 py-1.5 text-xs font-semibold rounded-md bg-indigo-600 text-white transition">Company A (ERP + Tool)</button>
+            <button type="button" onclick="setCompany('B')" id="btn-comp-b" class="px-4 py-1.5 text-xs font-semibold rounded-md text-slate-400 hover:text-white transition">Company B (USD & FX)</button>
+            <button type="button" onclick="setCompany('C')" id="btn-comp-c" class="px-4 py-1.5 text-xs font-semibold rounded-md text-slate-400 hover:text-white transition">Company C (Blind Test)</button>
+          </div>
+        </div>
+
+        <!-- Dynamic File Upload Form -->
+        <form id="pipeline-form" onsubmit="handleFormSubmit(event)" class="space-y-4">
+          <div id="company-info-banner" class="p-3.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-300 flex items-start gap-2.5">
+            <span class="text-indigo-400 mt-0.5">ℹ</span>
+            <div id="company-info-text">
+              <strong>Company A:</strong> Ingests ERP Goods Receipts & Invoice Tool Export, reconciles 15% VAT, resolves supplier/material keys, excludes duplicates, and classifies spend.
+            </div>
+          </div>
+
+          <div id="inputs-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Dynamically populated fields -->
+          </div>
+
+          <div class="flex items-center justify-between pt-4 border-t border-slate-800">
+            <label class="flex items-center text-xs text-slate-300 cursor-pointer">
+              <input type="checkbox" id="use-labels" checked class="rounded border-slate-700 bg-slate-950 text-indigo-600 mr-2 focus:ring-indigo-500">
+              Enable Supervised Labels (uncheck for 100% Zero-Label Lexical Fallback)
+            </label>
+            <button type="submit" id="run-btn" class="px-6 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs sm:text-sm transition flex items-center gap-2 shadow-lg shadow-indigo-600/20">
+              <span id="run-btn-text">Execute Pipeline</span>
+              <svg id="run-btn-spinner" class="hidden w-4 h-4 animate-spin text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Execution Progress / Status -->
+      <div id="progress-box" class="hidden p-4 rounded-xl bg-slate-900 border border-indigo-500/30 text-xs text-slate-300">
+        <div class="flex items-center justify-between mb-2">
+          <span class="font-medium text-indigo-400 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-indigo-500 animate-ping"></span>
+            Executing Pipeline Engine...
+          </span>
+          <span id="timer-text" class="text-slate-400 font-mono">0.0s</span>
+        </div>
+        <p class="text-slate-400" id="progress-msg">Normalizing currency, resolving identities, applying spend exclusions, and predicting taxonomy...</p>
+      </div>
+
+      <!-- Live Results Box -->
+      <div id="results-box" class="hidden space-y-4">
+        <!-- Results Header & Download -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-sm">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="text-lg font-semibold text-white">Pipeline Execution Completed</h3>
+                <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">VALIDATED</span>
+              </div>
+              <p class="text-xs text-slate-400 mt-1">Output schema verified: unique record IDs, 0 spend on exclusions, and runtime taxonomy paths.</p>
+            </div>
+            <a id="download-link" href="#" 
+               class="px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs sm:text-sm transition flex items-center gap-2 shadow-lg shadow-emerald-600/20">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              <span id="download-filename">Download Submission CSV</span>
+            </a>
+          </div>
+
+          <!-- KPI Grid -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
+            <div class="p-3.5 rounded-lg bg-slate-950 border border-slate-800">
+              <span class="text-xs text-slate-400">Total Input Rows</span>
+              <p id="stat-total" class="text-xl font-bold text-white mt-1">--</p>
+            </div>
+            <div class="p-3.5 rounded-lg bg-slate-950 border border-slate-800">
+              <span class="text-xs text-slate-400">Included Spend Rows</span>
+              <p id="stat-included" class="text-xl font-bold text-emerald-400 mt-1">--</p>
+            </div>
+            <div class="p-3.5 rounded-lg bg-slate-950 border border-slate-800">
+              <span class="text-xs text-slate-400">Excluded Rows</span>
+              <p id="stat-excluded" class="text-xl font-bold text-rose-400 mt-1">--</p>
+            </div>
+            <div class="p-3.5 rounded-lg bg-slate-950 border border-slate-800">
+              <span class="text-xs text-slate-400">Mean Confidence</span>
+              <p id="stat-conf" class="text-xl font-bold text-indigo-400 mt-1">--</p>
+            </div>
+          </div>
+
+          <!-- Spend and Entity Cluster Info -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+            <div class="p-3.5 rounded-lg bg-slate-950 border border-slate-800">
+              <span class="text-xs text-slate-400">Total Cleaned Spend</span>
+              <p id="stat-spend" class="text-base font-semibold text-white mt-1">--</p>
+            </div>
+            <div class="p-3.5 rounded-lg bg-slate-950 border border-slate-800">
+              <span class="text-xs text-slate-400">Unique Suppliers</span>
+              <p id="stat-suppliers" class="text-base font-semibold text-white mt-1">--</p>
+            </div>
+            <div class="p-3.5 rounded-lg bg-slate-950 border border-slate-800">
+              <span class="text-xs text-slate-400">Unique Item Clusters</span>
+              <p id="stat-items" class="text-base font-semibold text-white mt-1">--</p>
+            </div>
+          </div>
+
+          <!-- Exclusion Details -->
+          <div class="mt-6">
+            <h4 class="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Exclusion Breakdown</h4>
+            <div id="stat-exclusions" class="flex flex-wrap gap-2 text-xs">
+              <!-- Rendered badges -->
+            </div>
+          </div>
+
+          <!-- Diagnostics JSON accordion -->
+          <div class="mt-6 pt-4 border-t border-slate-800">
+            <details class="text-xs text-slate-400">
+              <summary class="cursor-pointer font-medium text-slate-300 hover:text-white transition">View Full Diagnostics JSON</summary>
+              <pre id="raw-json" class="mt-2 p-3 rounded bg-slate-950 border border-slate-800 overflow-x-auto text-[11px] font-mono text-slate-300"></pre>
+            </details>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: DEMO & BENCHMARK -->
+    <section id="content-demo" class="hidden space-y-6">
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-6">
+        <h3 class="text-base font-semibold text-white mb-1">Pre-Computed Build Benchmark Diagnostics</h3>
+        <p class="text-xs text-slate-400 mb-6">
+          Review the exact verified run results and download generated submission files without needing to upload the raw datasets.
+        </p>
+
+        <!-- Company Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Company A Card -->
+          <div class="p-5 rounded-xl bg-slate-950 border border-slate-800 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-sm font-bold text-white">Company A (ZAR Procurement)</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">65,549 Rows</span>
+              </div>
+              <ul class="text-xs text-slate-300 space-y-2 mb-4">
+                <li class="flex justify-between"><span>ERP Goods Receipts:</span> <strong class="text-white">37,029</strong></li>
+                <li class="flex justify-between"><span>Invoice Tool Exports:</span> <strong class="text-white">28,520</strong></li>
+                <li class="flex justify-between"><span>Cross-System Duplicates:</span> <strong class="text-rose-400">17,335</strong></li>
+                <li class="flex justify-between"><span>Cancelled & Not Approved:</span> <strong class="text-rose-400">503</strong></li>
+                <li class="flex justify-between"><span>Included Eligible Spend:</span> <strong class="text-emerald-400">47,711</strong></li>
+                <li class="flex justify-between"><span>Labels-Hidden Zero-Shot L1:</span> <strong class="text-indigo-400">44.13%</strong></li>
+              </ul>
+            </div>
+            <a href="/api/demo/A/download" 
+               class="w-full py-2 px-3 text-center rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs transition flex items-center justify-center gap-1.5 shadow-sm">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              Download vaibhav__A.csv (7.9 MB)
+            </a>
+          </div>
+
+          <!-- Company B Card -->
+          <div class="p-5 rounded-xl bg-slate-950 border border-slate-800 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-sm font-bold text-white">Company B (USD Multi-Currency)</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">41,028 Rows</span>
+              </div>
+              <ul class="text-xs text-slate-300 space-y-2 mb-4">
+                <li class="flex justify-between"><span>Total Invoice Lines:</span> <strong class="text-white">41,028</strong></li>
+                <li class="flex justify-between"><span>Non-Procurement (Tax/IC):</span> <strong class="text-rose-400">4,717</strong></li>
+                <li class="flex justify-between"><span>Included Eligible Spend:</span> <strong class="text-emerald-400">36,311</strong></li>
+                <li class="flex justify-between"><span>USD Conversion Rate:</span> <strong class="text-white">Inline + Monthly FX</strong></li>
+                <li class="flex justify-between"><span>Unique Suppliers (Vendor ID):</span> <strong class="text-white">1,504</strong></li>
+                <li class="flex justify-between"><span>Item Identity Clusters:</span> <strong class="text-white">14,242</strong></li>
+              </ul>
+            </div>
+            <a href="/api/demo/B/download" 
+               class="w-full py-2 px-3 text-center rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs transition flex items-center justify-center gap-1.5 shadow-sm">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              Download vaibhav__B.csv (5.0 MB)
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800 bg-slate-950 py-6 text-xs text-slate-500">
+    <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <span>Cantill.ai Data & ML Pipeline • Config-driven architecture</span>
+      <span>Designed for Vercel Serverless & Local CLI</span>
+    </div>
+  </footer>
+
+  <script>
+    let currentCompany = 'A';
+    let timerInterval = null;
+
+    const companyConfigs = {
+      'A': {
+        banner: '<strong>Company A:</strong> Ingests ERP Goods Receipts & Invoice Tool Export, reconciles 15% VAT, resolves supplier/material keys, excludes duplicates, and classifies spend.',
+        fields: [
+          { id: 'erp_file', label: '1. ERP Goods Receipts CSV *', desc: 'e.g. erp_goods_receipts.csv', required: true },
+          { id: 'tool_file', label: '2. Invoice Tool Export CSV *', desc: 'e.g. invoice_tool_export.csv', required: true },
+          { id: 'taxonomy_file', label: '3. Runtime Taxonomy CSV *', desc: 'e.g. taxonomy_A.csv', required: true },
+          { id: 'labels_file', label: '4. Golden Labels CSV (Optional)', desc: 'e.g. labels_A.csv (uncheck below if omitted)', required: false }
+        ]
+      },
+      'B': {
+        banner: '<strong>Company B:</strong> Ingests invoice lines, normalizes multi-currency spend via inline rates and monthly FX fallback, identifies non-procurement, and classifies taxonomy.',
+        fields: [
+          { id: 'invoice_file', label: '1. Invoice Lines CSV *', desc: 'e.g. invoice_lines.csv', required: true },
+          { id: 'taxonomy_file', label: '2. Runtime Taxonomy CSV *', desc: 'e.g. taxonomy_B.csv', required: true },
+          { id: 'fx_file', label: '3. FX Rates USD CSV *', desc: 'e.g. fx_rates_usd.csv', required: true },
+          { id: 'labels_file', label: '4. Seed Labels CSV (Optional)', desc: 'e.g. seed_labels.csv (optional for supervised mapping)', required: false }
+        ]
+      },
+      'C': {
+        banner: '<strong>Company C (Blind Test):</strong> Fully config-driven zero-label classification for unseen categories and fields without modifying Python code.',
+        fields: [
+          { id: 'invoice_file', label: '1. Company C Invoice / AP CSV *', desc: 'e.g. invoice_lines.csv', required: true },
+          { id: 'taxonomy_file', label: '2. Company C Taxonomy CSV *', desc: 'e.g. taxonomy_C.csv (1-4 levels)', required: true },
+          { id: 'config_file', label: '3. Custom company_c.yaml (Optional)', desc: 'Leave empty to use built-in template', required: false }
+        ]
+      }
+    };
+
+    function renderFields() {
+      const cfg = companyConfigs[currentCompany];
+      document.getElementById('company-info-text').innerHTML = cfg.banner;
+      const container = document.getElementById('inputs-container');
+      container.innerHTML = cfg.fields.map(f => `
+        <div class="p-3.5 rounded-lg bg-slate-950 border border-slate-800 hover:border-slate-700 transition">
+          <label class="block text-xs font-semibold text-slate-200 mb-1" for="${f.id}">${f.label}</label>
+          <span class="block text-[11px] text-slate-500 mb-2">${f.desc}</span>
+          <input type="file" id="${f.id}" name="${f.id}" ${f.required ? 'required' : ''} accept=".csv,.yaml,.yml"
+                 class="block w-full text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-slate-800 file:text-slate-200 hover:file:bg-slate-700 cursor-pointer">
+        </div>
+      `).join('');
+    }
+
+    function setCompany(c) {
+      currentCompany = c;
+      ['a', 'b', 'c'].forEach(k => {
+        const btn = document.getElementById(`btn-comp-${k}`);
+        if (k.toUpperCase() === c) {
+          btn.className = "px-4 py-1.5 text-xs font-semibold rounded-md bg-indigo-600 text-white transition";
+        } else {
+          btn.className = "px-4 py-1.5 text-xs font-semibold rounded-md text-slate-400 hover:text-white transition";
+        }
+      });
+      renderFields();
+      document.getElementById('results-box').classList.add('hidden');
+    }
+
+    function switchTab(tab) {
+      const liveBtn = document.getElementById('tab-live');
+      const demoBtn = document.getElementById('tab-demo');
+      const liveSec = document.getElementById('content-live');
+      const demoSec = document.getElementById('content-demo');
+
+      if (tab === 'live') {
+        liveBtn.className = "px-4 py-2 rounded-lg text-sm font-medium transition bg-indigo-600 text-white shadow-sm flex items-center gap-2";
+        demoBtn.className = "px-4 py-2 rounded-lg text-sm font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-900 flex items-center gap-2";
+        liveSec.classList.remove('hidden');
+        demoSec.classList.add('hidden');
+      } else {
+        demoBtn.className = "px-4 py-2 rounded-lg text-sm font-medium transition bg-indigo-600 text-white shadow-sm flex items-center gap-2";
+        liveBtn.className = "px-4 py-2 rounded-lg text-sm font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-900 flex items-center gap-2";
+        demoSec.classList.remove('hidden');
+        liveSec.classList.add('hidden');
+      }
+    }
+
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+      const form = document.getElementById('pipeline-form');
+      const formData = new FormData(form);
+      formData.append('company', currentCompany);
+      formData.append('use_labels', document.getElementById('use-labels').checked);
+
+      const runBtn = document.getElementById('run-btn');
+      const runBtnText = document.getElementById('run-btn-text');
+      const runBtnSpinner = document.getElementById('run-btn-spinner');
+      const progressBox = document.getElementById('progress-box');
+      const resultsBox = document.getElementById('results-box');
+
+      runBtn.disabled = true;
+      runBtnText.textContent = 'Processing...';
+      runBtnSpinner.classList.remove('hidden');
+      progressBox.classList.remove('hidden');
+      resultsBox.classList.add('hidden');
+
+      let startTime = Date.now();
+      timerInterval = setInterval(() => {
+        document.getElementById('timer-text').textContent = ((Date.now() - startTime) / 1000).toFixed(1) + 's';
+      }, 100);
+
+      try {
+        const resp = await fetch('/api/run', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await resp.json();
+        clearInterval(timerInterval);
+
+        if (!resp.ok || !data.success) {
+          alert('Pipeline run failed: ' + (data.error || 'Unknown error occurred.'));
+          return;
+        }
+
+        renderResults(data);
+      } catch (err) {
+        clearInterval(timerInterval);
+        alert('Network or processing error: ' + err.message);
+      } finally {
+        runBtn.disabled = false;
+        runBtnText.textContent = 'Execute Pipeline';
+        runBtnSpinner.classList.add('hidden');
+        progressBox.classList.add('hidden');
+      }
+    }
+
+    function renderResults(res) {
+      const diag = res.diagnostics;
+      document.getElementById('stat-total').textContent = diag.input_rows.toLocaleString();
+      document.getElementById('stat-included').textContent = diag.included.toLocaleString();
+      document.getElementById('stat-excluded').textContent = diag.excluded.toLocaleString();
+      document.getElementById('stat-conf').textContent = (diag.mean_confidence * 100).toFixed(1) + '%';
+      document.getElementById('stat-spend').textContent = (diag.company === 'A' ? 'ZAR ' : '$') + Number(diag.total_spend || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      document.getElementById('stat-suppliers').textContent = (diag.supplier_keys || 0).toLocaleString();
+      document.getElementById('stat-items').textContent = (diag.item_keys || 0).toLocaleString();
+
+      const excContainer = document.getElementById('stat-exclusions');
+      const counts = diag.exclusion_counts || {};
+      excContainer.innerHTML = Object.entries(counts).map(([k, v]) => `
+        <span class="px-2.5 py-1 rounded bg-slate-950 border border-slate-800 text-slate-300">
+          <strong class="text-rose-400 font-semibold">${k}:</strong> ${v.toLocaleString()}
+        </span>
+      `).join('') || '<span class="text-slate-500">None</span>';
+
+      document.getElementById('raw-json').textContent = JSON.stringify(diag, null, 2);
+
+      const dlLink = document.getElementById('download-link');
+      dlLink.href = `/api/download/${res.download_id}`;
+      document.getElementById('download-filename').textContent = `Download ${res.filename}`;
+
+      document.getElementById('results-box').classList.remove('hidden');
+      document.getElementById('results-box').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Initialize
+    renderFields();
+  </script>
+</body>
+</html>

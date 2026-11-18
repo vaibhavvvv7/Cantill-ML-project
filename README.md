@@ -4,6 +4,10 @@ A config-driven procurement spend pipeline for the Cantill.ai Data & ML task.
 
 It ingests heterogeneous purchasing systems, normalizes amounts/dates/currency, applies spend exclusions, de-duplicates cross-system records, resolves supplier/item identities, classifies included spend into a taxonomy loaded at run time, and writes the exact required submission schema.
 
+Includes both a **Python CLI / batch engine** and a **FastAPI web application & UI ready for Vercel deployment**.
+
+---
+
 ## Key Design Constraints
 
 - **New company = new YAML config, not new Python code.**
@@ -12,11 +16,19 @@ It ingests heterogeneous purchasing systems, normalizes amounts/dates/currency, 
 - Company B converts to USD using inline rates first, then monthly FX fallback.
 - Labels are optional. If absent, the classifier automatically falls back to taxonomy-only classification.
 - Confidential task CSVs are ignored by Git and are never copied into the repository.
+- Reusable ML engine wrapped in a thin FastAPI layer for web/cloud deployment.
+
+---
 
 ## Repository Layout
 
 ```text
 Cantill-ML-project/
+├── api/
+│   ├── __init__.py
+│   └── index.py             # FastAPI entrypoint for Vercel & local server
+├── static/
+│   └── index.html           # Interactive upload & diagnostics web interface
 ├── configs/
 │   ├── company_a.yaml
 │   ├── company_b.yaml
@@ -56,6 +68,7 @@ Cantill-ML-project/
 ├── BLIND_TEST.md
 ├── DECISIONS.md
 ├── README.md
+├── vercel.json              # Vercel deployment configuration
 ├── pyproject.toml
 ├── pytest.ini
 ├── requirements.txt
@@ -64,7 +77,38 @@ Cantill-ML-project/
 
 ---
 
-## Quick Start & Setup
+## Web Application & Vercel Deployment
+
+The project includes an interactive web interface so reviewers and procurement analysts can execute the pipeline without writing shell commands.
+
+### Architecture
+- **Backend:** FastAPI application (`api/index.py`) exposing `/api/run`, `/api/health`, and `/api/download/{id}`.
+- **Frontend:** Responsive Tailwind UI (`static/index.html`) supporting file drag-and-drop, real-time execution timer, KPI cards, exclusion breakdowns, and instant CSV downloads.
+- **Pre-Computed Benchmark Mode:** Allows reviewers to inspect build-run diagnostics and download submission files (`vaibhav__A.csv`, `vaibhav__B.csv`) directly in the browser even without uploading raw files.
+
+### 1. Run Locally as a Web App
+
+```powershell
+# Activate your environment
+.venv\Scripts\Activate.ps1
+
+# Start the web server
+uvicorn api.index:app --reload --port 8000
+```
+Open **`http://localhost:8000`** in your browser.
+
+### 2. Deploy to Vercel
+
+The repository is configured for immediate Vercel deployment via [`vercel.json`](file:///c:/Users/shiva/OneDrive/Desktop/cantill_project/vercel.json):
+
+1. Push to your GitHub repository: `https://github.com/vaibhavvvv7/Cantill-ML-project`.
+2. Go to [Vercel](https://vercel.com) and click **"Add New Project"** $\rightarrow$ **"Import Git Repository"**.
+3. Select `Cantill-ML-project` and click **"Deploy"**.
+4. Vercel automatically detects the Python runtime, installs `requirements.txt`, and routes all incoming requests to `api/index.py`.
+
+---
+
+## Quick Start & Setup (CLI)
 
 ### 1. Clone & Environment
 
@@ -120,7 +164,7 @@ Or set the `CANTILL_DATA_ROOT` environment variable.
 
 ---
 
-## Running the Pipeline
+## Running the Pipeline (CLI)
 
 ### Run Company A
 

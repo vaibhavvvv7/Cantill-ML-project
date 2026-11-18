@@ -8,3 +8,4 @@ Write-Host "Running Company B pipeline..." -ForegroundColor Cyan
 python -m spend_pipeline --config configs/company_b.yaml --data-root $DataRoot --output outputs/vaibhav__B.csv --diagnostics outputs/B_diagnostics.json
 
 Write-Host "Pipeline runs completed successfully." -ForegroundColor Green
+

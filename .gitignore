@@ -1,20 +1,23 @@
-# Confidential task data - never commit
-/data/
-**/company_A/*.csv
-**/company_B/*.csv
-**/company_C/*.csv
+# Confidential task data and raw spend files - never commit
+data/
+*.csv
+!output_template.csv
+outputs/*.csv
+outputs/*.parquet
+**/company_A/
+**/company_B/
+**/company_C/
 **/Cantill_DataML_Task_Kit*/
 *.zip
 
-# Python
+# Python & Environment
 __pycache__/
 *.py[cod]
 .venv/
 venv/
+.env
 .pytest_cache/
 
-# Generated caches/models
+# Generated caches & artifacts
 .cache/
 artifacts/
-
-# Blind-test outputs are intentionally allowed under submission/

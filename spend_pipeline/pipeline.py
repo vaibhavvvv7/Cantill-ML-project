@@ -29,7 +29,10 @@ def _feature_text(df: pd.DataFrame, cfg: dict) -> list[str]:
     for _,r in df.iterrows():
         parts=[]
         for c in cols:
-            if c in r.index and pd.notna(r[c]) and str(r[c]).strip(): parts.append(f"{c} {r[c]}")
+            if c in r.index and pd.notna(r[c]):
+                v = str(r[c]).strip()
+                if v and v.lower() != "nan":
+                    parts.append(v)
         vals.append(" | ".join(parts))
     return vals
 

@@ -5,6 +5,7 @@ import json
 import time
 import uuid
 import tempfile
+import traceback
 from pathlib import Path
 from typing import Optional
 
@@ -48,6 +49,168 @@ async def fix_vercel_path(request: Request, call_next):
 
 # In-memory store for generated downloads: {task_id: {"content": bytes, "filename": str, "created_at": float}}
 DOWNLOAD_CACHE: dict[str, dict] = {}
+
+# Embedded default configs as fallback if not bundled in serverless environment
+DEFAULT_CONFIGS = {
+    "A": """company: A
+data_root: data/Cantill_DataML_Task_Kit
+reporting_currency: ZAR
+
+taxonomy:
+  file: company_A/taxonomy_A.csv
+  columns: [category_l1, category_l2, category_l3]
+
+labels:
+  file: company_A/labels_A.csv
+  id_column: record_id
+  id_prefix: ""
+  category_columns: [category_l1, category_l2, category_l3]
+
+sources:
+  - name: ERP
+    file: company_A/erp_goods_receipts.csv
+    id_column: line_id
+    record_prefix: "ERP:"
+    columns:
+      supplier_id: vendor_id
+      supplier_name: supplier_name
+      material_id: material_number
+      currency: document_currency
+      quantity: quantity
+      po_number: po_number
+      po_line: po_item
+    description_columns: [material_short_text, service_short_text]
+    date_columns: [posting_date]
+    amount:
+      column: value_zar
+      type: net
+    retain_columns: [source_system, spend_type, material_type, uom, site_code, site_name, cost_centre, opex_capex, contract_status]
+
+  - name: TOOL
+    file: company_A/invoice_tool_export.csv
+    id_column: tool_record_id
+    record_prefix: "TOOL:"
+    columns:
+      supplier_name: supplier_name_as_captured
+      status: status
+      currency: currency
+      quantity: quantity
+      po_number: po_reference
+      invoice_number: invoice_number
+    description_columns: [line_text]
+    date_columns: [invoice_date]
+    amount:
+      column: gross_amount
+      type: gross
+      tax_column: vat_rate
+      default_tax: 0.15
+
+matching:
+  enabled: true
+  primary_source: ERP
+  secondary_source: TOOL
+
+spend_rules:
+  status_column: status
+  approved_statuses: [Paid, Approved, ""]
+  cancelled_statuses: [Cancelled]
+  non_procurement_text_columns: []
+
+classification:
+  feature_columns: [description, material_id, supplier_name, supplier_id, spend_type, material_type, cost_centre, site_code]
+""",
+    "B": """company: B
+data_root: data/Cantill_DataML_Task_Kit
+reporting_currency: USD
+
+taxonomy:
+  file: company_B/taxonomy_B.csv
+  columns: [category_l1, category_l2, category_l3]
+
+labels:
+  file: company_B/seed_labels.csv
+  id_column: line_id
+  id_prefix: ""
+  category_columns: [category_l1, category_l2, category_l3]
+
+sources:
+  - name: AP
+    file: company_B/invoice_lines.csv
+    id_column: line_id
+    record_prefix: ""
+    columns:
+      supplier_id: vendor_id
+      material_id: material_number
+      currency: currency
+      quantity: quantity
+      po_number: po_number
+      po_line: po_line
+      invoice_number: invoice_number
+    description_columns: [line_description, gl_account_description]
+    date_columns: [invoice_date, posting_date]
+    amount:
+      column: line_amount
+      type: net
+    retain_columns: [source_system, region, currency_rate, cost_centre, gl_account, gl_account_description, supplier_type, document_type, po_type, plant, company_code, payment_terms, transport_flag]
+
+fx:
+  inline_rate_column: currency_rate
+  file: company_B/fx_rates_usd.csv
+  currency_column: currency
+  month_column: month
+  rate_column: units_per_usd
+
+spend_rules:
+  learn_exact_columns: [gl_account_description, supplier_type]
+  non_procurement_text_columns: [gl_account_description, line_description]
+  non_procurement_regex:
+    - "^IC[0-9]+$"
+    - "\\bI/C\\s*Payable\\b"
+    - "\\bIC\\s*Payables?\\b"
+
+classification:
+  feature_columns: [description, material_id, supplier_id, gl_account, gl_account_description, supplier_type, document_type, po_type, source_system, region, plant, cost_centre]
+""",
+    "C": """company: C
+data_root: data/Cantill_DataML_Task_Kit
+reporting_currency: USD
+
+taxonomy:
+  file: company_C/taxonomy_C.csv
+  columns: [category_l1, category_l2, category_l3, category_l4]
+
+sources:
+  - name: AP
+    file: company_C/invoice_lines.csv
+    id_column: line_id
+    record_prefix: ""
+    columns:
+      supplier_id: vendor_id
+      supplier_name: supplier_name
+      material_id: material_number
+      status: status
+      currency: currency
+      quantity: quantity
+      po_number: po_number
+      po_line: po_line
+      invoice_number: invoice_number
+    description_columns: [line_description, gl_account_description]
+    date_columns: [invoice_date, posting_date]
+    amount:
+      column: line_amount
+      type: net
+    retain_columns: [gl_account, gl_account_description, supplier_type, document_type, cost_centre]
+
+spend_rules:
+  status_column: status
+  approved_statuses: [Approved, Paid]
+  cancelled_statuses: [Cancelled, Canceled]
+  non_procurement_text_columns: [gl_account_description, line_description]
+
+classification:
+  feature_columns: [description, material_id, supplier_name, supplier_id, gl_account_description, document_type, cost_centre]
+"""
+}
 
 
 def _cleanup_cache():
@@ -136,17 +299,24 @@ async def run_pipeline_endpoint(request: Request):
     try:
         from spend_pipeline.pipeline import run_pipeline
     except ImportError as e:
+        tb = traceback.format_exc()
+        print("IMPORT ERROR:\n", tb)
         return JSONResponse(status_code=500, content={
             "success": False,
-            "error": f"ML pipeline dependencies not ready: {str(e)}"
+            "error": f"ImportError: {str(e)}",
+            "detail": f"Dependencies missing: {str(e)}",
+            "traceback": tb
         })
 
     try:
         form = await request.form()
     except Exception as e:
+        tb = traceback.format_exc()
         return JSONResponse(status_code=400, content={
             "success": False,
-            "error": f"Failed to parse form data. Ensure python-multipart is installed: {str(e)}"
+            "error": f"FormDataError: {str(e)}",
+            "detail": f"Failed to parse multipart form: {str(e)}",
+            "traceback": tb
         })
 
     company = str(form.get("company", "A")).strip().upper()
@@ -154,7 +324,7 @@ async def run_pipeline_endpoint(request: Request):
         return JSONResponse(status_code=400, content={"success": False, "error": f"Invalid company: {company}"})
 
     raw_labels = form.get("use_labels", "true")
-    use_labels = str(raw_labels).lower() in ["true", "1", "on", "yes"]
+    user_wants_labels = str(raw_labels).lower() in ["true", "1", "on", "yes"]
 
     erp_file = form.get("erp_file")
     tool_file = form.get("tool_file")
@@ -169,11 +339,16 @@ async def run_pipeline_endpoint(request: Request):
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp_path = Path(tmp_dir)
 
+        # Ensure configs directory exists in temp dir
+        cfg_dir = tmp_path / "configs"
+        cfg_dir.mkdir(parents=True, exist_ok=True)
+
         if company == "A":
             if not _is_valid_upload(erp_file) or not _is_valid_upload(tool_file) or not _is_valid_upload(taxonomy_file):
                 return JSONResponse(status_code=400, content={
                     "success": False,
-                    "error": "Company A requires: ERP CSV, Invoice Tool CSV, and Taxonomy CSV."
+                    "error": "Company A requires: ERP CSV, Invoice Tool CSV, and Taxonomy CSV.",
+                    "detail": "Missing one of the required CSV files for Company A."
                 })
 
             comp_dir = tmp_path / "company_A"
@@ -182,18 +357,24 @@ async def run_pipeline_endpoint(request: Request):
             (comp_dir / "erp_goods_receipts.csv").write_bytes(await erp_file.read())
             (comp_dir / "invoice_tool_export.csv").write_bytes(await tool_file.read())
             (comp_dir / "taxonomy_A.csv").write_bytes(await taxonomy_file.read())
-            if _is_valid_upload(labels_file):
+
+            if _is_valid_upload(labels_file) and user_wants_labels:
                 (comp_dir / "labels_A.csv").write_bytes(await labels_file.read())
+                use_labels = True
             else:
                 use_labels = False
 
-            config_path = str(ROOT_DIR / "configs" / "company_a.yaml")
+            # Prepare config file
+            cfg_file = cfg_dir / "company_a.yaml"
+            cfg_file.write_text(DEFAULT_CONFIGS["A"], encoding="utf-8")
+            config_path = str(cfg_file)
 
         elif company == "B":
             if not _is_valid_upload(invoice_file) or not _is_valid_upload(taxonomy_file) or not _is_valid_upload(fx_file):
                 return JSONResponse(status_code=400, content={
                     "success": False,
-                    "error": "Company B requires: Invoice Lines CSV, Taxonomy CSV, and FX Rates CSV."
+                    "error": "Company B requires: Invoice Lines CSV, Taxonomy CSV, and FX Rates CSV.",
+                    "detail": "Missing one of the required CSV files for Company B."
                 })
 
             comp_dir = tmp_path / "company_B"
@@ -202,18 +383,23 @@ async def run_pipeline_endpoint(request: Request):
             (comp_dir / "invoice_lines.csv").write_bytes(await invoice_file.read())
             (comp_dir / "taxonomy_B.csv").write_bytes(await taxonomy_file.read())
             (comp_dir / "fx_rates_usd.csv").write_bytes(await fx_file.read())
-            if _is_valid_upload(labels_file):
+
+            if _is_valid_upload(labels_file) and user_wants_labels:
                 (comp_dir / "seed_labels.csv").write_bytes(await labels_file.read())
+                use_labels = True
             else:
                 use_labels = False
 
-            config_path = str(ROOT_DIR / "configs" / "company_b.yaml")
+            cfg_file = cfg_dir / "company_b.yaml"
+            cfg_file.write_text(DEFAULT_CONFIGS["B"], encoding="utf-8")
+            config_path = str(cfg_file)
 
         else:  # Company C
             if not _is_valid_upload(invoice_file) or not _is_valid_upload(taxonomy_file):
                 return JSONResponse(status_code=400, content={
                     "success": False,
-                    "error": "Company C requires: Invoice Lines CSV and Taxonomy CSV."
+                    "error": "Company C requires: Invoice Lines CSV and Taxonomy CSV.",
+                    "detail": "Missing one of the required CSV files for Company C."
                 })
 
             comp_dir = tmp_path / "company_C"
@@ -222,12 +408,12 @@ async def run_pipeline_endpoint(request: Request):
             (comp_dir / "invoice_lines.csv").write_bytes(await invoice_file.read())
             (comp_dir / "taxonomy_C.csv").write_bytes(await taxonomy_file.read())
 
+            cfg_file = cfg_dir / "company_c.yaml"
             if _is_valid_upload(config_file):
-                cfg_path = tmp_path / "company_c.yaml"
-                cfg_path.write_bytes(await config_file.read())
-                config_path = str(cfg_path)
+                cfg_file.write_bytes(await config_file.read())
             else:
-                config_path = str(ROOT_DIR / "configs" / "company_c_template.yaml")
+                cfg_file.write_text(DEFAULT_CONFIGS["C"], encoding="utf-8")
+            config_path = str(cfg_file)
 
             use_labels = False
 
@@ -244,9 +430,13 @@ async def run_pipeline_endpoint(request: Request):
             )
             csv_bytes = output_file.read_bytes()
         except Exception as e:
+            tb = traceback.format_exc()
+            print("PIPELINE RUNTIME EXCEPTION:\n", tb)
             return JSONResponse(status_code=500, content={
                 "success": False,
-                "error": f"Pipeline processing failed: {str(e)}"
+                "error": f"{type(e).__name__}: {str(e)}",
+                "detail": f"{type(e).__name__}: {str(e)}",
+                "traceback": tb
             })
 
     download_id = str(uuid.uuid4())

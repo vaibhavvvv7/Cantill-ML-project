@@ -8,9 +8,9 @@
   ],
   "functions": {
     "api/index.py": {
+      "includeFiles": "configs/**,static/**,outputs/**",
       "maxDuration": 300,
       "memory": 1024
     }
   }
 }
-

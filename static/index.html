@@ -371,11 +371,19 @@
           body: formData
         });
 
-        const data = await resp.json();
+        let data = {};
+        try {
+          data = await resp.json();
+        } catch (e) {
+          const txt = await resp.text();
+          data = { error: `HTTP ${resp.status}: ${txt.substring(0, 300)}` };
+        }
         clearInterval(timerInterval);
 
         if (!resp.ok || !data.success) {
-          alert('Pipeline run failed: ' + (data.error || 'Unknown error occurred.'));
+          const errMsg = data.error || data.detail || (data.traceback ? data.traceback : 'Unknown error occurred.');
+          alert(`Pipeline Execution Error:\n\n${errMsg}`);
+          console.error('Full Pipeline Error Report:', data);
           return;
         }
 

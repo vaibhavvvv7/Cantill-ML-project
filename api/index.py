@@ -37,12 +37,20 @@ app.add_middleware(
 async def fix_vercel_path(request: Request, call_next):
     """Normalize Vercel rewrite paths so FastAPI router correctly dispatches requests."""
     scope = request.scope
-    path = scope.get("path", "")
-    for prefix in ("/api/index.py", "/api/index", "/index.py"):
-        if path.startswith(prefix):
-            remainder = path[len(prefix):]
-            scope["path"] = remainder if remainder else "/"
-            break
+    headers = dict(request.headers)
+
+    # If Vercel passed the original matched path in headers, use it
+    matched_path = headers.get("x-matched-path")
+    if matched_path and matched_path not in ("/api/index.py", "/api/index", "/index.py"):
+        scope["path"] = matched_path
+    else:
+        path = scope.get("path", "")
+        for prefix in ("/api/index.py", "/api/index", "/index.py"):
+            if path.startswith(prefix):
+                remainder = path[len(prefix):]
+                scope["path"] = remainder if remainder else "/"
+                break
+
     response = await call_next(request)
     return response
 
@@ -291,8 +299,15 @@ async def download_demo_csv(company: str):
     )
 
 
+# Accept POST on every conceivable route variant to prevent 405 Method Not Allowed
 @app.post("/api/run")
 @app.post("/run")
+@app.post("/")
+@app.post("/api")
+@app.post("/api/")
+@app.post("/api/index")
+@app.post("/api/index.py")
+@app.post("/index.py")
 @app.post("/api/index.py/api/run")
 @app.post("/api/index/api/run")
 async def run_pipeline_endpoint(request: Request):

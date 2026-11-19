@@ -127,7 +127,7 @@ spend_rules:
 classification:
   feature_columns: [description, material_id, supplier_name, supplier_id, spend_type, material_type, cost_centre, site_code]
 """,
-    "B": """company: B
+    "B": r"""company: B
 data_root: data/Cantill_DataML_Task_Kit
 reporting_currency: USD
 
@@ -172,9 +172,9 @@ spend_rules:
   learn_exact_columns: [gl_account_description, supplier_type]
   non_procurement_text_columns: [gl_account_description, line_description]
   non_procurement_regex:
-    - "^IC[0-9]+$"
-    - "\\bI/C\\s*Payable\\b"
-    - "\\bIC\\s*Payables?\\b"
+    - '^IC[0-9]+$'
+    - '\bI/C\s*Payable\b'
+    - '\bIC\s*Payables?\b'
 
 classification:
   feature_columns: [description, material_id, supplier_id, gl_account, gl_account_description, supplier_type, document_type, po_type, source_system, region, plant, cost_centre]
